@@ -5,7 +5,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.webkit.WebChromeClient;
@@ -16,6 +15,7 @@ import android.widget.ProgressBar;
 
 import in.tosc.doandroidlib.DigitalOcean;
 import in.tosc.doandroidlib.R;
+import timber.log.Timber;
 
 public class DOLoginActivity extends AppCompatActivity {
 
@@ -30,6 +30,7 @@ public class DOLoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Timber.tag(TAG).d("onCreate: starting OAuth login flow");
 
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         requestWindowFeature(Window.FEATURE_PROGRESS);
@@ -53,10 +54,10 @@ public class DOLoginActivity extends AppCompatActivity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
 
-
-                Log.d(TAG, "shouldOverrideUrlLoading: " + url);
+                Timber.tag(TAG).d("shouldOverrideUrlLoading: %s", url);
 
                 if (url.startsWith(DigitalOcean.getCallbackUrl())) {
+                    Timber.tag(TAG).d("shouldOverrideUrlLoading: callback URL matched, completing login");
                     String properUrl = url.replace("#", "?");
                     String authToken = Uri.parse(properUrl).getQueryParameter("access_token");
                     DigitalOcean.onLoggedIn(authToken);
