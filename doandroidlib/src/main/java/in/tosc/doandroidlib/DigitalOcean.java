@@ -24,8 +24,10 @@ import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import timber.log.Timber;
 
 /**
  * Created by championswimmer on 26/11/16.
@@ -57,18 +59,33 @@ public class DigitalOcean {
     static Retrofit r, r2;
 
     public static void init (String clientId, String callbackUrl) {
+        if (Timber.treeCount() == 0 && BuildConfig.DEBUG) {
+            Timber.plant(new Timber.DebugTree());
+        }
+        Timber.tag(TAG).d("init: clientId=%s callbackUrl=%s", clientId, callbackUrl);
         DigitalOcean.clientId = clientId;
         DigitalOcean.callbackUrl = callbackUrl;
     }
 
     public static void doLogin(Activity act) {
+        Timber.tag(TAG).d("doLogin: launching DOLoginActivity");
         Intent loginIntent = new Intent(act, DOLoginActivity.class);
         act.startActivityForResult(loginIntent, 3245);
     }
 
-
+    private static HttpLoggingInterceptor newLoggingInterceptor() {
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
+            @Override
+            public void log(String message) {
+                Timber.tag(TAG).d(message);
+            }
+        });
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BASIC);
+        return loggingInterceptor;
+    }
 
     public static void onLoggedIn (String token) {
+        Timber.tag(TAG).d("onLoggedIn: received auth token, building API clients");
         DigitalOcean.authToken = token;
 
         OkHttpClient httpClient = new OkHttpClient.Builder()
@@ -82,6 +99,7 @@ public class DigitalOcean {
                         return chain.proceed(request);
                     }
                 })
+                .addInterceptor(newLoggingInterceptor())
                 .build();
 
 
@@ -106,8 +124,10 @@ public class DigitalOcean {
     }
 
     public static DigitalOceanClient getDOClient (final String authToken) {
+        Timber.tag(TAG).d("getDOClient: requesting DigitalOceanClient instance");
 
         if(r == null){
+            Timber.tag(TAG).d("getDOClient: no cached Retrofit instance, building a new one");
             OkHttpClient httpClient = new OkHttpClient.Builder()
                     .addInterceptor(new Interceptor() {
                         @Override
@@ -119,6 +139,7 @@ public class DigitalOcean {
                             return chain.proceed(request);
                         }
                     })
+                    .addInterceptor(newLoggingInterceptor())
                     .build();
 
 
@@ -140,7 +161,9 @@ public class DigitalOcean {
     }
 
     public static DigitalOceanStatisticsClient getDOStatsClient (final String authToken) {
+        Timber.tag(TAG).d("getDOStatsClient: requesting DigitalOceanStatisticsClient instance");
         if(r2 == null){
+            Timber.tag(TAG).d("getDOStatsClient: no cached Retrofit instance, building a new one");
             OkHttpClient httpClient = new OkHttpClient.Builder()
                     .addInterceptor(new Interceptor() {
                         @Override
@@ -152,6 +175,7 @@ public class DigitalOcean {
                             return chain.proceed(request);
                         }
                     })
+                    .addInterceptor(newLoggingInterceptor())
                     .build();
 
 
